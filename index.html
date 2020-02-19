@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>474 Midterm</title>
+    <script src="https://d3js.org/d3.v4.js"></script>
+    <style>
+        div.tooltip {
+            position: absolute;
+            opacity: 0;
+        }
+
+        table,
+        th,
+        td {
+            border: 1px solid black;
+            padding: 8px;
+        }
+
+        .color-box {
+            float: left;
+            width: 12px;
+            height: 12px;
+            border: 1px solid rgba(0, 0, 0, .2);
+            margin-right: .25rem;
+            margin-top: 2px;
+        }
+
+        h4 {
+            margin: .5rem 0;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>Fertility vs Life Expectancy (1980)</h2>
+    <table>
+        <tr>
+            <td>
+                <div id="scatterPlotContainer"></div>
+            </td>
+        </tr>
+    </table>
+    <script src="src.js"></script>
+</body>
+
+</html>
