@@ -60,7 +60,7 @@ const createSVG = (width, height, marginLeft, marginRight, marginTop, marginBott
 const createAndPlotXAxis = (svg, data, width, height) => {
 
     const x = d3.scaleLinear()
-        .domain([d3.min(data, function (d) { return +d["fertility"] }) * .7, d3.max(data, function (d) { return +d["fertility"] }) * 1.3])
+        .domain([d3.min(data, function (d) { return +d["fertility"] }) * .9, d3.max(data, function (d) { return +d["fertility"] }) * 1.1])
         .range([0, width]);
 
     svg.append("g")
@@ -74,7 +74,7 @@ const createAndPlotXAxis = (svg, data, width, height) => {
             "translate(" + (width / 2) + " ," +
             (height + 36) + ")")
         .style("text-anchor", "middle")
-        .text("Sp. Defense");
+        .text("Fertility");
 
     return x;
 }
@@ -95,7 +95,7 @@ const createAndPlotYAxis = (svg, data, height) => {
         .attr("x", 0 - (height / 2))
         .attr("dy", "1em")
         .style("text-anchor", "middle")
-        .text("Total Stats");
+        .text("Life Expectancy");
 
     return y;
 }
@@ -124,7 +124,7 @@ const createTooltip = () => {
 // Updates scatter plot
 const update = (svg, filteredData, x, y, tooltip) => {
 
-    x.domain([d3.min(filteredData, function (d) { return +d["fertility"] }) * .7, d3.max(filteredData, function (d) { return +d["fertility"] }) * 1.3])
+    x.domain([d3.min(filteredData, function (d) { return +d["fertility"] }) * .9, d3.max(filteredData, function (d) { return +d["fertility"] }) * 1.1])
 
     svg.selectAll(".myXaxis").transition()
         .duration(3000)
@@ -149,7 +149,19 @@ const update = (svg, filteredData, x, y, tooltip) => {
         .attr("r", 3)
         .on("mouseover", (d) => { mouseover(d, tooltip) })
         .on("mousemove", (d) => { mousemove(d, tooltip, filteredData) })
-        .on("mouseleave", (d) => { mouseleave(d, tooltip) });
+        .on("mouseleave", (d) => { mouseleave(d, tooltip) })
+        .filter(function (d) { return d.population > 1000; })
+        .append("p")
+
+    svg.selectAll(".country_labels")
+        .data(filteredData)
+        .enter()
+        .filter(function (d) { return d.population > 100000000 } )
+        .append("text")
+        .attr("class", "country_labels")
+        .text(function (d) { return d.country })
+        .attr("x", function (d) { return x(d["fertility"]) + 20; })
+        .attr("y", function (d) { return y(d["life_expectancy"]) + 5; });
 
     plot.merge(enter).transition().duration(3000)
         .attr("cx", function (d) { return x(d["fertility"]); })
@@ -169,16 +181,17 @@ const mousemove = (d, tooltip, data) => {
     state.tooltipDiv
         .style("left", (d3.event.pageX + 60) + "px")
         .style("top", (d3.event.pageY - 30) + "px");
-    tooltip.selectAll("*").remove()
-    plotPopulation(tooltip, d["country"], data);
+
+    tooltip.selectAll("*").remove();
+
+    plotPopulationOverTime(tooltip, d["country"]);
 }
 
-function plotPopulation(tooltip, country, toolChart) {
+function plotPopulationOverTime(tooltip, country) {
     let countryData = state.ogData.filter((row) => { return row.country == country && row.population != "NA" })
-    let population = countryData.map((row) => parseInt(row["population"]));
-    let year = countryData.map((row) => parseInt(row["year"]));
 
-    console.log(countryData)
+    let year = countryData.map((row) => parseInt(row["year"]));
+    let population = countryData.map((row) => parseInt(row["population"] / 1000000));
 
     let axesLimits = findMinMax(year, population);
     let mapFunctions = drawAxes(axesLimits, "year", "population", tooltip, small_msm);
@@ -186,16 +199,15 @@ function plotPopulation(tooltip, country, toolChart) {
     tooltip.append("path")
         .datum(countryData)
         .attr("fill", "none")
-        .attr("stroke", "steelblue")
+        .attr("stroke", "red")
         .attr("stroke-width", 1.5)
         .attr("d", d3.line()
             .x(function (d) { return mapFunctions.xScale(d.year) })
-            .y(function (d) { return mapFunctions.yScale(d.population) }))
+            .y(function (d) { return mapFunctions.yScale(d.population / 1000000) }))
 
-    //makeLabels(toolChart, small_msm, "Population Over Time For " + country, "Year", "Population (in Millions)");
+    makeLabels(tooltip, small_msm, "Population Over Time For " + country, "Year", "Population (in Millions)");
 }
 
-// draw the axes and ticks
 function drawAxes(limits, x, y, svgContainer, msm) {
     // return x value from a row of data
     let xValue = function (d) {
@@ -248,7 +260,6 @@ function drawAxes(limits, x, y, svgContainer, msm) {
     };
 }
 
-// find min and max for arrays of x and y
 function findMinMax(x, y) {
 
     // get min/max x values
@@ -266,6 +277,25 @@ function findMinMax(x, y) {
         yMin: yMin,
         yMax: yMax
     }
+}
+
+function makeLabels(svgContainer, msm, title, x, y) {
+    svgContainer.append('text')
+        .attr('x', (msm.width - 2 * msm.marginAll) / 2 - 90)
+        .attr('y', msm.marginAll / 2 + 10)
+        .style('font-size', '10pt')
+        .text(title);
+
+    svgContainer.append('text')
+        .attr('x', (msm.width - 2 * msm.marginAll) / 2 - 30)
+        .attr('y', msm.height - 10)
+        .style('font-size', '10pt')
+        .text(x);
+
+    svgContainer.append('text')
+        .attr('transform', 'translate( 15,' + (msm.height / 2 + 30) + ') rotate(-90)')
+        .style('font-size', '10pt')
+        .text(y);
 }
 
 const mouseleave = (d, tooltip) => {
